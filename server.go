@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net"
+	"os"
 
 	pb "github.com/klimenko-serj/grpc-test/proto"
 	"golang.org/x/net/context"
@@ -14,7 +16,12 @@ import (
 func main() {
 	log.Println("UrlServiceServer started")
 
-	l, err := net.Listen("tcp", ":9099")
+	serverPort := os.Getenv("GRPC_TEST_SERVER_PORT")
+	if serverPort == "" {
+		serverPort = "9099"
+	}
+
+	l, err := net.Listen("tcp", fmt.Sprintf(":%s", serverPort))
 	if err != nil {
 		log.Fatal(err)
 	}

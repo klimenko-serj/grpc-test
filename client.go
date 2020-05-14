@@ -18,10 +18,15 @@ func main() {
 	}
 	url := os.Args[1]
 
+	serverAddr := os.Getenv("GRPC_TEST_SERVER")
+	if serverAddr == "" {
+		serverAddr = "127.0.0.1:9099"
+	}
+
 	opts := []grpc.DialOption{
 		grpc.WithInsecure(),
 	}
-	conn, err := grpc.Dial("127.0.0.1:9099", opts...)
+	conn, err := grpc.Dial(serverAddr, opts...)
 
 	if err != nil {
 		grpclog.Fatalf("GRPC Dial failed: %v", err)
