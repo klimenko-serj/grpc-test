@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+package server;
+
+message UrlRequest {
+    string url = 1;
+}
+
+service UrlService {
+    rpc ProcessURL (UrlRequest) returns (google.protobuf.Empty);
+}
+
