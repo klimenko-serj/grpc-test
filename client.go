@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net"
 	"os"
 
+	"github.com/golang/protobuf/ptypes/empty"
 	pb "github.com/klimenko-serj/grpc-test/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/grpclog"
@@ -22,6 +24,9 @@ func main() {
 	if serverAddr == "" {
 		serverAddr = "127.0.0.1:9099"
 	}
+
+	finished := make(chan bool)
+	go startClientService(finished)
 
 	opts := []grpc.DialOption{
 		grpc.WithInsecure(),
@@ -45,4 +50,42 @@ func main() {
 	}
 	log.Println("Request to process", url, "sent.")
 
+	<-finished
+}
+
+func startClientService(f chan bool) {
+	serverPort := os.Getenv("GRPC_TEST_CLIENT_PORT")
+	if serverPort == "" {
+		serverPort = "9077"
+	}
+
+	l, err := net.Listen("tcp", fmt.Sprintf(":%s", serverPort))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	grpcServer := grpc.NewServer()
+
+	pb.RegisterUrlClientServer(grpcServer, &client{grpcServer: grpcServer})
+
+	grpcServer.Serve(l)
+
+	log.Println("gRPC Server stopped.")
+	f <- true
+}
+
+type client struct {
+	grpcServer *grpc.Server
+}
+
+func (c client) SendHeader(ctx context.Context, h *pb.Header) (*empty.Empty, error) {
+	log.Println("StatusCode:", h.StatusCode)
+	return &empty.Empty{}, nil
+}
+
+func (c *client) Finish(ctx context.Context, _ *empty.Empty) (*empty.Empty, error) {
+	go func() {
+		c.grpcServer.GracefulStop()
+	}()
+	return &empty.Empty{}, nil
 }

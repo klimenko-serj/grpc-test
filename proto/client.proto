@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+package grpc_test;
+
+message Header {
+    int32 statusCode = 1;
+}
+
+service UrlClient {
+    rpc SendHeader (Header) returns (google.protobuf.Empty);
+    rpc Finish (google.protobuf.Empty) returns (google.protobuf.Empty);
+}

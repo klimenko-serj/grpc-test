@@ -11,6 +11,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/grpc/grpclog"
 )
 
 func main() {
@@ -40,8 +41,44 @@ func (s* server) ProcessURL(ctx context.Context,u *pb.UrlRequest) (*emptypb.Empt
 	log.Println("UrlReqest:", u.Url)
 
 	p, _ := peer.FromContext(ctx)
-	addr := p.Addr.(*net.TCPAddr).IP.String()
-	log.Println("Addr:", addr)
+	clientIP := p.Addr.(*net.TCPAddr).IP.String()
+	log.Println("Client IP:", clientIP)
+
+	go processURL(clientIP, u.Url)
 
 	return &emptypb.Empty{}, nil
+}
+
+func processURL(clientIP, url string) {
+	opts := []grpc.DialOption{
+		grpc.WithInsecure(),
+	}
+
+	conn, err := grpc.Dial(fmt.Sprintf("%s:9077", clientIP), opts...)
+	if err != nil {
+		// No Fatal - it shouldn't stop server
+		grpclog.Errorf("GRPC Dial failed: %v", err)
+		return
+	}
+
+	defer conn.Close()
+
+	client := pb.NewUrlClientClient(conn)
+	request := &pb.Header{StatusCode: 200}
+
+	_, err = client.SendHeader(context.Background(), request)
+	if err != nil {
+		// No Fatal - it shouldn't stop server
+		grpclog.Errorf("GRPC call ProcessURL failed: %v", err)
+		return
+	}
+	log.Println("Header sent")
+
+	_, err = client.Finish(context.Background(), &emptypb.Empty{})
+	if err != nil {
+		// No Fatal - it shouldn't stop server
+		grpclog.Errorf("GRPC call ProcessURL failed: %v", err)
+		return
+	}
+	log.Println("Finish signal sent")
 }
