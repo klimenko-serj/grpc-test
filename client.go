@@ -14,6 +14,15 @@ import (
 )
 
 func main() {
+	file, err := os.OpenFile("client.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer file.Close()
+
+	log.SetOutput(file)
+
 	if len(os.Args) < 2 {
 		fmt.Println("Usage:\n\tclient [url]")
 		return
@@ -80,6 +89,8 @@ type client struct {
 
 func (c client) SendHeader(ctx context.Context, h *pb.Header) (*empty.Empty, error) {
 	log.Println("StatusCode:", h.StatusCode)
+	log.Println("Header:\n", h.Header)
+	fmt.Println(h.Header)
 	return &empty.Empty{}, nil
 }
 

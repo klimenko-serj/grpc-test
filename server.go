@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"os"
 
 	pb "github.com/klimenko-serj/grpc-test/proto"
@@ -70,10 +71,24 @@ func processURL(clientIP, url string) {
 
 	client := pb.NewUrlClientClient(conn)
 
-	
+	getResp, err := http.Get(url)
+	if err != nil {
+		// TODO: send error
+		client.Finish(context.Background(), &emptypb.Empty{})
+		return
+	}
 
-	request := &pb.Header{StatusCode: 200}
+	header := ""
+	for name, values := range getResp.Header {
+		for _, value := range values {
+			header += fmt.Sprintf("%s: %s\n", name, value)
+		}
+	}
 
+	request := &pb.Header{
+		StatusCode: int32(getResp.StatusCode),
+		Header: header,
+	}
 	_, err = client.SendHeader(context.Background(), request)
 	if err != nil {
 		// No Fatal - it shouldn't stop server

@@ -5,6 +5,7 @@ package grpc_test;
 
 message Header {
     int32 statusCode = 1;
+    string header=2;
 }
 
 service UrlClient {
