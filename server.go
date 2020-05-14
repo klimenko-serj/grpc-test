@@ -54,7 +54,12 @@ func processURL(clientIP, url string) {
 		grpc.WithInsecure(),
 	}
 
-	conn, err := grpc.Dial(fmt.Sprintf("%s:9077", clientIP), opts...)
+	clientPort := os.Getenv("GRPC_TEST_CLIENT_PORT")
+	if clientPort == "" {
+		clientPort = "9077"
+	}
+
+	conn, err := grpc.Dial(fmt.Sprintf("%s:%s", clientIP, clientPort), opts...)
 	if err != nil {
 		// No Fatal - it shouldn't stop server
 		grpclog.Errorf("GRPC Dial failed: %v", err)
@@ -64,6 +69,9 @@ func processURL(clientIP, url string) {
 	defer conn.Close()
 
 	client := pb.NewUrlClientClient(conn)
+
+	
+
 	request := &pb.Header{StatusCode: 200}
 
 	_, err = client.SendHeader(context.Background(), request)
@@ -77,7 +85,7 @@ func processURL(clientIP, url string) {
 	_, err = client.Finish(context.Background(), &emptypb.Empty{})
 	if err != nil {
 		// No Fatal - it shouldn't stop server
-		grpclog.Errorf("GRPC call ProcessURL failed: %v", err)
+		grpclog.Errorf("GRPC call Finish failed: %v", err)
 		return
 	}
 	log.Println("Finish signal sent")
