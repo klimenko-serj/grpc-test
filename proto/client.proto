@@ -8,7 +8,12 @@ message Header {
     string header=2;
 }
 
+message Body {
+    bytes body=1;
+}
+
 service UrlClient {
     rpc SendHeader (Header) returns (google.protobuf.Empty);
+    rpc SendBody (Body) returns (google.protobuf.Empty);
     rpc Finish (google.protobuf.Empty) returns (google.protobuf.Empty);
 }

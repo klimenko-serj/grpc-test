@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"io/ioutil"
 
 	pb "github.com/klimenko-serj/grpc-test/proto"
 	"golang.org/x/net/context"
@@ -92,10 +93,23 @@ func processURL(clientIP, url string) {
 	_, err = client.SendHeader(context.Background(), request)
 	if err != nil {
 		// No Fatal - it shouldn't stop server
-		grpclog.Errorf("GRPC call ProcessURL failed: %v", err)
+		grpclog.Errorf("GRPC call SendHeader failed: %v", err)
 		return
 	}
 	log.Println("Header sent")
+
+	defer getResp.Body.Close()
+	body, err := ioutil.ReadAll(getResp.Body)
+	if err != nil {
+		grpclog.Errorf("Can't read body: %v", err)
+	}
+	_, err = client.SendBody(context.Background(), &pb.Body{Body: body})
+	if err != nil {
+		// No Fatal - it shouldn't stop server
+		grpclog.Errorf("GRPC call SendBody failed: %v", err)
+		return
+	}
+	log.Println("Body sent")
 
 	_, err = client.Finish(context.Background(), &emptypb.Empty{})
 	if err != nil {

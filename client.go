@@ -94,6 +94,12 @@ func (c client) SendHeader(ctx context.Context, h *pb.Header) (*empty.Empty, err
 	return &empty.Empty{}, nil
 }
 
+func (c client) SendBody(ctx context.Context, b *pb.Body) (*empty.Empty, error) {
+	log.Println("Body part:", b.Body[:10], "...\n as str:", string(b.Body[:10]))
+	fmt.Println(string(b.Body[:])[:100])
+	return &empty.Empty{}, nil
+}
+
 func (c *client) Finish(ctx context.Context, _ *empty.Empty) (*empty.Empty, error) {
 	go func() {
 		c.grpcServer.GracefulStop()
