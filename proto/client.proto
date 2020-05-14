@@ -12,8 +12,13 @@ message Body {
     bytes body=1;
 }
 
+message FinishMessage {
+    bool error = 1;
+    string errorMessage=2;
+}
+
 service UrlClient {
     rpc SendHeader (Header) returns (google.protobuf.Empty);
     rpc SendBody (Body) returns (google.protobuf.Empty);
-    rpc Finish (google.protobuf.Empty) returns (google.protobuf.Empty);
+    rpc Finish (FinishMessage) returns (google.protobuf.Empty);
 }

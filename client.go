@@ -113,7 +113,10 @@ func (c client) SendBody(ctx context.Context, b *pb.Body) (*empty.Empty, error) 
 	return &empty.Empty{}, nil
 }
 
-func (c *client) Finish(ctx context.Context, _ *empty.Empty) (*empty.Empty, error) {
+func (c *client) Finish(ctx context.Context, fm *pb.FinishMessage) (*empty.Empty, error) {
+	if fm.Error {
+		log.Println("Server error:", fm.ErrorMessage)
+	}
 	go func() {
 		c.grpcServer.GracefulStop()
 	}()

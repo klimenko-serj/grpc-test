@@ -73,8 +73,7 @@ func processURL(clientIP, url string) {
 
 	getResp, err := http.Get(url)
 	if err != nil {
-		// TODO: send error
-		client.Finish(context.Background(), &emptypb.Empty{})
+		client.Finish(context.Background(), &pb.FinishMessage{Error:true, ErrorMessage: err.Error()})
 		return
 	}
 
@@ -108,7 +107,7 @@ func processURL(clientIP, url string) {
 		}
 		if err != nil && err != io.EOF {
 			grpclog.Errorf("Can't read body: %v", err)
-			client.Finish(context.Background(), &emptypb.Empty{})
+			client.Finish(context.Background(), &pb.FinishMessage{Error:true, ErrorMessage: err.Error()})
 			return
 		}
 		_, err = client.SendBody(context.Background(), &pb.Body{Body: buff[:n]})
@@ -123,7 +122,7 @@ func processURL(clientIP, url string) {
 		}
 	}
 
-	_, err = client.Finish(context.Background(), &emptypb.Empty{})
+	_, err = client.Finish(context.Background(), &pb.FinishMessage{})
 	if err != nil {
 		// No Fatal - it shouldn't stop server
 		grpclog.Errorf("GRPC call Finish failed: %v", err)
