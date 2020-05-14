@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"log"
@@ -74,17 +75,29 @@ func startClientService(f chan bool) {
 	}
 
 	grpcServer := grpc.NewServer()
+	clientServ := client{grpcServer: grpcServer, bodyBuffer: &bytes.Buffer{}}
 
-	pb.RegisterUrlClientServer(grpcServer, &client{grpcServer: grpcServer})
+	pb.RegisterUrlClientServer(grpcServer, &clientServ)
 
 	grpcServer.Serve(l)
-
 	log.Println("gRPC Server stopped.")
+
+	strBody := string(clientServ.bodyBuffer.Bytes())
+	strBodyLen := len(strBody)
+
+	log.Println("BodyBuffer size: ", strBodyLen)
+
+	if strBodyLen > 100 {
+		fmt.Println(strBody[:100])
+	} else {
+		fmt.Println(strBody)
+	}
 	f <- true
 }
 
 type client struct {
 	grpcServer *grpc.Server
+	bodyBuffer *bytes.Buffer
 }
 
 func (c client) SendHeader(ctx context.Context, h *pb.Header) (*empty.Empty, error) {
@@ -95,8 +108,8 @@ func (c client) SendHeader(ctx context.Context, h *pb.Header) (*empty.Empty, err
 }
 
 func (c client) SendBody(ctx context.Context, b *pb.Body) (*empty.Empty, error) {
-	log.Println("Body part:", b.Body[:10], "...\n as str:", string(b.Body[:10]))
-	fmt.Println(string(b.Body[:])[:100])
+	log.Println("Body part: size =", len(b.Body))
+	c.bodyBuffer.Write(b.Body)
 	return &empty.Empty{}, nil
 }
 

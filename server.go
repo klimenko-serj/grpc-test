@@ -2,18 +2,18 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"net/http"
 	"os"
-	"io/ioutil"
 
 	pb "github.com/klimenko-serj/grpc-test/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/grpclog"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"google.golang.org/grpc/grpclog"
 )
 
 func main() {
@@ -36,10 +36,9 @@ func main() {
 	grpcServer.Serve(l)
 }
 
+type server struct{}
 
-type server struct {}
-
-func (s* server) ProcessURL(ctx context.Context,u *pb.UrlRequest) (*emptypb.Empty, error){
+func (s *server) ProcessURL(ctx context.Context, u *pb.UrlRequest) (*emptypb.Empty, error) {
 	log.Println("UrlReqest:", u.Url)
 
 	p, _ := peer.FromContext(ctx)
@@ -88,7 +87,7 @@ func processURL(clientIP, url string) {
 
 	request := &pb.Header{
 		StatusCode: int32(getResp.StatusCode),
-		Header: header,
+		Header:     header,
 	}
 	_, err = client.SendHeader(context.Background(), request)
 	if err != nil {
@@ -99,17 +98,30 @@ func processURL(clientIP, url string) {
 	log.Println("Header sent")
 
 	defer getResp.Body.Close()
-	body, err := ioutil.ReadAll(getResp.Body)
-	if err != nil {
-		grpclog.Errorf("Can't read body: %v", err)
+
+	buff := make([]byte, 1024)
+	eof := false
+	for {
+		n, err := getResp.Body.Read(buff)
+		if err == io.EOF {
+			eof = true
+		}
+		if err != nil && err != io.EOF {
+			grpclog.Errorf("Can't read body: %v", err)
+			client.Finish(context.Background(), &emptypb.Empty{})
+			return
+		}
+		_, err = client.SendBody(context.Background(), &pb.Body{Body: buff[:n]})
+		if err != nil {
+			// No Fatal - it shouldn't stop server
+			grpclog.Errorf("GRPC call SendBody failed: %v", err)
+			return
+		}
+		log.Println("Body part sent. size =", n)
+		if eof {
+			break
+		}
 	}
-	_, err = client.SendBody(context.Background(), &pb.Body{Body: body})
-	if err != nil {
-		// No Fatal - it shouldn't stop server
-		grpclog.Errorf("GRPC call SendBody failed: %v", err)
-		return
-	}
-	log.Println("Body sent")
 
 	_, err = client.Finish(context.Background(), &emptypb.Empty{})
 	if err != nil {
