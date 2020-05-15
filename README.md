@@ -3,7 +3,7 @@ GoLang gRPC test project
 
 ### server:
 ```bash
-go run server.go
+go run server/server.go
 ```
 Environment variables for server:
 - GRPC_TEST_SERVER_PORT - server port number (default 9099)
@@ -12,7 +12,7 @@ Environment variables for server:
 
 ### client:
 ```bash
-go run client.go http://google.com
+go run client/client.go http://google.com
 ```
 
 Environment variables for client:

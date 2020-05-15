@@ -63,6 +63,8 @@ func main() {
 	<-finished
 }
 
+// gRPC
+
 func startClientService(f chan bool) {
 	serverPort := os.Getenv("GRPC_TEST_CLIENT_PORT")
 	if serverPort == "" {
